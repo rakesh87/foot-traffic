@@ -26,30 +26,32 @@ class DataBuilder
 
   def narrow_data_set
   	per_room_data = {}
+
   	convert_raw_data.each do |key, value|
-  		room_name = key
-  		room_data = value
   		person_data = Hash.new { |h,k| h[k] = [] }
-  		room_data.each do |data|
+  		value.each do |data|
   			person_id = data.shift
   			person_data[person_id] << Hash[*data]
   		end
-  		per_room_data[room_name] = person_data
+  		per_room_data[key] = person_data
   	end
+
   	per_room_data.sort_by{|k, v| k.to_i}
   end
 
-  
+  def avg_time(time, room_data_size)
+  	time.inject(0, :+) / room_data_size
+  end
 
+	def display_string(room_name, time, room_data_size)
+  	"Room #{room_name}, #{avg_time(time, room_data_size)} minute average visit, #{room_data_size} visitor(s) total"
+  end
+  
   def format_room_data
-  	room_foot_print_data = []
+  	room_foot_print_string_collection = []
   	narrow_data_set.each do |key, value|
-  		room_name = key
-  		room_data = value
-  		room_data_size = value.size
   		time = []
-  		room_data.each do |k, v|
-  			person_id = k
+  		value.each do |k, v|
   			person_data = v
   			person_data.reduce{ |a, data| a.merge! data}
   			in_time = person_data.first.fetch('I').to_i
@@ -57,13 +59,10 @@ class DataBuilder
   			total_time = out_time - in_time
   			time << total_time
   		end
-  		room_foot_print_data << display_string(room_name, time, room_data_size)
+  		room_foot_print_string_collection << display_string(key, time, value.size)
   	end
-  	room_foot_print_data
+  	room_foot_print_string_collection
   end
 
-  def display_string(room_name, time, room_data_size)
-  	"Room #{room_name}, #{time.inject(0, :+) / room_data_size} minute average visit, #{room_data_size} visitor(s) total"
-  end
 
 end
